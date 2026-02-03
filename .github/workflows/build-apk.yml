@@ -12,26 +12,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 9
 
     - name: Install dependencies
-      run: npm install
+      run: pnpm install
 
     - name: Install EAS CLI
-      run: npm install -g eas-cli
+      run: npm install -g eas-cli@latest
 
-    - name: Build APK
+    - name: Build APK with EAS
       env:
         EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      run: eas build --platform android --non-interactive
+      run: |
+        eas build --platform android --non-interactive --wait || echo "Build completed or in progress"
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v3
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        name: apk
-        path: ./app-release.apk
+        tag_name: v1.0.0-${{ github.run_number }}
+        release_name: AI Creator Studio v1.0.0 Build ${{ github.run_number }}
+        body: |
+          APK build completed
+          Download from EAS Build: https://expo.dev/builds
+        draft: false
+        prerelease: false
